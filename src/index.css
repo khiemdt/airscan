@@ -132,3 +132,9 @@ button:focus-visible {
   height: 100%;
   font-size: 24px;
 }
+.text-clip {
+  white-space: nowrap;
+  width: 200px;
+  overflow: hidden;
+  text-overflow: clip ellipsis clip 0 3ch;
+}

@@ -1,27 +1,28 @@
 import {
-  AudioOutlined,
-  EditOutlined,
-  EllipsisOutlined,
-  SettingOutlined,
   DeleteOutlined,
+  EditOutlined,
   FileSearchOutlined,
 } from "@ant-design/icons";
-import { Row, Card } from "antd";
-import Avatar from "antd/es/avatar";
+import { Card, message, Row, Space, Tag } from "antd";
 import Button from "antd/es/button";
 import Drawer from "antd/es/drawer";
 import { Col } from "antd/es/grid";
 import Input from "antd/es/input";
 import Skeleton from "antd/es/skeleton";
 import Table from "antd/es/table";
-import { FC, useState } from "react";
+import { useEffect, useState } from "react";
+import { fetAccount, search } from "./apis/api";
 import "./App.css";
+import DetailTabs from "./detail/DetailTabs";
 import SolListForm from "./SolListForm";
 let solListLocal: any = undefined;
 function App() {
   solListLocal = localStorage.getItem("solListLocal") || [];
 
   const [solList, setSolList] = useState<any[]>(JSON.parse(solListLocal));
+  const [solPrice, setSolPrice] = useState<any>({});
+  const [account, setAccount] = useState<any>([]);
+  const [loading, setLoading] = useState(false);
   const { Search } = Input;
   const { Meta } = Card;
   const [modal, setModal] = useState<any>({
@@ -31,7 +32,9 @@ function App() {
     des: null,
   });
 
-  const onSearch = (value: string) => console.log(value);
+  const onSearch = (value: string) => {
+    getAccount([value]);
+  };
   const dataSource = [...Array(100)].map((el: any, index: number) => ({
     key: index,
     name: "Mike",
@@ -41,11 +44,7 @@ function App() {
 
   const handleSolList = (value: any) => {
     if (value.index != undefined) {
-      solList.forEach((el, idx) => {
-        if (idx == value.index) {
-          el = { ...value };
-        }
-      });
+      setSolList(solList.splice(value.index, 1, value));
     } else {
       solList.push(value);
     }
@@ -54,29 +53,82 @@ function App() {
     onClose();
   };
 
+  const getAccount = async (arr: any) => {
+    setAccount([]);
+    const result = [];
+    setLoading(true);
+    for (let index = 0; index < arr?.length; index++) {
+      const params = {
+        address: arr[index],
+        cluster: null,
+      };
+      try {
+        const data = await fetAccount(params);
+        if (data.succcess) {
+          result.push({ ...data?.data, key: index });
+        } else {
+          result.push({
+            account: arr[index],
+            isErr: true,
+            key: index,
+          });
+        }
+      } catch (error) {
+        console.log(error);
+      }
+    }
+    setLoading(false);
+    setAccount(result);
+  };
+
   const columns = [
     {
       title: "ID",
       dataIndex: "key",
-      key: "key",
-      render: (text: number) => {
-        return <span>{text + 1} </span>;
+      render: (text: string, record: any, index: number) => {
+        return <div>{index + 1} </div>;
+      },
+      with: 100,
+    },
+    {
+      title: "Account",
+      dataIndex: "account",
+      key: "account",
+      render: (text: string) => {
+        return <div className="text-clip">{text} </div>;
       },
     },
     {
-      title: "Name",
-      dataIndex: "name",
-      key: "name",
+      title: "Balance",
+      dataIndex: "lamports",
+      key: "lamports",
+      render: (text: string) => {
+        return <span>{(Number(text) / Math.pow(10, 8)).toFixed(4)} </span>;
+      },
     },
     {
-      title: "Age",
-      dataIndex: "age",
-      key: "age",
+      title: "Value",
+      dataIndex: "lamports",
+      key: "lamports",
+      render: (text: string) => {
+        return (
+          <span>
+            {((Number(text) / Math.pow(10, 8)) * solPrice.priceUsdt).toFixed(2)}
+          </span>
+        );
+      },
     },
     {
-      title: "Address",
-      dataIndex: "address",
-      key: "address",
+      title: "Action",
+      dataIndex: "isErr",
+      key: "isErr",
+      render: (text: string) => {
+        return (
+          <Tag color={text ? "error" : "success"}>
+            {text ? "Error" : "Success"}
+          </Tag>
+        );
+      },
     },
   ];
 
@@ -89,10 +141,47 @@ function App() {
     });
   };
 
+  const fetPriceDetail = async () => {
+    const params = {
+      symbol: "SOL",
+      cluster: null,
+    };
+    try {
+      const data = await search(params);
+      if (data.success) {
+        setSolPrice(data?.data);
+      } else {
+        message.error(data?.message);
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  useEffect(() => {
+    fetPriceDetail();
+  }, []);
+
   return (
     <div className="container">
       <h1>Scan SOL wallets</h1>
       <Row>
+        <Col style={{ margin: "auto", width: "200px" }}>
+          <Space>
+            <img
+              src="https://solscan.io/static/media/solana-sol-logo.b612f1402147c92338bed5af1879b175.svg"
+              alt=""
+              height={10}
+            />
+            <b>${solPrice?.priceUsdt}</b>
+            <Tag color={solPrice?.priceChange24h > 0 ? "success" : "error"}>
+              {solPrice?.priceChange24h?.toFixed(2)}%{" "}
+            </Tag>
+            <span>Rank: #{solPrice.marketCapRank}</span>
+          </Space>
+        </Col>
+      </Row>
+      <Row style={{ marginTop: "10px" }}>
         <Col span={24}>
           <Search
             placeholder="input search text"
@@ -106,9 +195,16 @@ function App() {
         {solList?.map((el: any, index) => (
           <Col span={6} key={index}>
             <Card
+              loading={loading}
               hoverable
               actions={[
-                <FileSearchOutlined key="search" />,
+                <FileSearchOutlined
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    getAccount(el?.item);
+                  }}
+                  key="search"
+                />,
                 <EditOutlined
                   onClick={(e) => {
                     e.stopPropagation();
@@ -159,10 +255,13 @@ function App() {
           size="small"
           style={{ width: "100%" }}
           pagination={false}
-          dataSource={dataSource || []}
+          dataSource={account || []}
           columns={columns}
-          loading={false}
+          loading={loading}
           scroll={{ y: 500 }}
+          expandable={{
+            expandedRowRender: (record: any) => <DetailTabs record={record} />,
+          }}
         />
       </Row>
       <Drawer
