@@ -46,7 +46,7 @@ const SolListForm: FC<modalInterFace> = (props: any) => {
           ]}
           name={"title"}
         >
-          <Input />
+          <Input placeholder="Enter title" />
         </Form.Item>
         <Form.Item
           rules={[
@@ -56,7 +56,7 @@ const SolListForm: FC<modalInterFace> = (props: any) => {
           ]}
           name={"des"}
         >
-          <Input />
+          <Input placeholder="Enter description" />
         </Form.Item>
         <Form.Item
           rules={[
@@ -66,7 +66,7 @@ const SolListForm: FC<modalInterFace> = (props: any) => {
           ]}
           name={"textArea"}
         >
-          <TextArea rows={10} />
+          <TextArea placeholder="Enter sol list" rows={10} />
         </Form.Item>
         <Form.Item>
           <Button
