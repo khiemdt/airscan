@@ -17,7 +17,9 @@ import DetailTabs from "./detail/DetailTabs";
 import SolListForm from "./SolListForm";
 let solListLocal: any = undefined;
 function App() {
-  solListLocal = localStorage.getItem("solListLocal") || [];
+  solListLocal = localStorage.getItem("solListLocal")
+    ? localStorage.getItem("solListLocal")
+    : "[]";
 
   const [solList, setSolList] = useState<any[]>(JSON.parse(solListLocal));
   const [solPrice, setSolPrice] = useState<any>({});
