@@ -29,14 +29,15 @@ const SolListForm: FC<modalInterFace> = (props: any) => {
         labelCol={{ span: 4 }}
         layout="horizontal"
         initialValues={{
-          title: "khiem1231",
-          des: "khiem dep trai",
-          textArea: null,
+          ...modal,
         }}
         style={{ width: "100%" }}
         onFinish={onFinish}
         form={form}
       >
+        <Form.Item name={"index"} hidden>
+          <Input />
+        </Form.Item>
         <Form.Item
           rules={[
             {

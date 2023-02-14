@@ -3,6 +3,8 @@ import {
   EditOutlined,
   EllipsisOutlined,
   SettingOutlined,
+  DeleteOutlined,
+  FileSearchOutlined,
 } from "@ant-design/icons";
 import { Row, Card } from "antd";
 import Avatar from "antd/es/avatar";
@@ -15,9 +17,11 @@ import Table from "antd/es/table";
 import { FC, useState } from "react";
 import "./App.css";
 import SolListForm from "./SolListForm";
-
+let solListLocal: any = undefined;
 function App() {
-  const [solList, setSolList] = useState<any[]>([]);
+  solListLocal = localStorage.getItem("solListLocal") || [];
+
+  const [solList, setSolList] = useState<any[]>(JSON.parse(solListLocal));
   const { Search } = Input;
   const { Meta } = Card;
   const [modal, setModal] = useState<any>({
@@ -36,8 +40,17 @@ function App() {
   }));
 
   const handleSolList = (value: any) => {
-    solList.push(value);
+    if (value.index != undefined) {
+      solList.forEach((el, idx) => {
+        if (idx == value.index) {
+          el = { ...value };
+        }
+      });
+    } else {
+      solList.push(value);
+    }
     setSolList(solList);
+    localStorage.setItem("solListLocal", JSON.stringify(solList));
     onClose();
   };
 
@@ -90,13 +103,29 @@ function App() {
         </Col>
       </Row>
       <Row gutter={10} style={{ marginTop: "24px" }}>
-        {solList.map((el: any) => (
-          <Col span={6}>
+        {solList?.map((el: any, index) => (
+          <Col span={6} key={index}>
             <Card
               hoverable
               actions={[
-                <SettingOutlined key="setting" />,
-                <EditOutlined key="edit" />,
+                <FileSearchOutlined key="search" />,
+                <EditOutlined
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setModal({ ...el, open: true, index: index });
+                  }}
+                  key="edit"
+                />,
+                <DeleteOutlined
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    let arr = [...solList];
+                    arr.splice(index, 1);
+                    setSolList(arr);
+                    localStorage.setItem("solListLocal", JSON.stringify(arr));
+                  }}
+                  key="delete"
+                />,
               ]}
             >
               <Skeleton loading={false} avatar active>
@@ -105,26 +134,25 @@ function App() {
             </Card>
           </Col>
         ))}
-        {!solList.length ||
-          (solList?.length < 4 && (
-            <Col span={6}>
-              <Button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setModal({
-                    item: [],
-                    open: true,
-                    title: null,
-                    des: null,
-                  });
-                }}
-                className="btn-main"
-                type="primary"
-              >
-                Add SOL list
-              </Button>
-            </Col>
-          ))}
+        {(!solList?.length || solList?.length < 4) && (
+          <Col span={6}>
+            <Button
+              onClick={(e) => {
+                e.stopPropagation();
+                setModal({
+                  item: [],
+                  open: true,
+                  title: null,
+                  des: null,
+                });
+              }}
+              className="btn-main"
+              type="primary"
+            >
+              Add SOL list
+            </Button>
+          </Col>
+        )}
       </Row>
       <Row style={{ marginTop: "24px" }}>
         <Table
