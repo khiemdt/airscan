@@ -57,30 +57,40 @@ function App() {
 
   const getAccount = async (arr: any) => {
     setAccount([]);
-    const result = [];
     setLoading(true);
-    for (let index = 0; index < arr?.length; index++) {
+    let result: any[] = [];
+
+    for (let i = 0; i < arr.length; i++) {
       const params = {
-        address: arr[index],
+        address: arr[i],
         cluster: null,
       };
+
       try {
         const data = await fetAccount(params);
         if (data.succcess) {
-          result.push({ ...data?.data, key: index });
+          result.push({ ...data.data, key: i });
         } else {
-          result.push({
-            account: arr[index],
-            isErr: true,
-            key: index,
-          });
+          result.push({ account: arr[i], isErr: true, key: i });
         }
       } catch (error) {
         console.log(error);
+        result.push({ account: arr[i], isErr: true, key: i });
+      }
+
+      // Nếu đã gọi API thứ 5 hoặc đã gọi hết API mà còn dư result
+      if (i === arr.length - 1 || (i + 1) % 5 === 0) {
+        setAccount((prevState: any) => [...prevState, ...result]);
+        result = [];
+      }
+
+      // Nếu chưa gọi hết API mà đã có kết quả trả về, tạm dừng 0.5s trước khi gọi tiếp
+      if (i < arr.length - 1 && (i + 1) % 5 !== 0) {
+        await new Promise((resolve) => setTimeout(resolve, 50));
       }
     }
+
     setLoading(false);
-    setAccount(result);
   };
 
   const columns = [
@@ -259,7 +269,6 @@ function App() {
           pagination={false}
           dataSource={account || []}
           columns={columns}
-          loading={loading}
           scroll={{ y: 500 }}
           expandable={{
             expandedRowRender: (record: any) => <DetailTabs record={record} />,
