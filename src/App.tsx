@@ -55,43 +55,58 @@ function App() {
     onClose();
   };
 
-  const getAccount = async (arr: any) => {
+  const getAccount = async (arr: string[]) => {
+    console.log(arr);
+
     setAccount([]);
     setLoading(true);
-    let result: any[] = [];
 
-    for (let i = 0; i < arr.length; i++) {
-      const params = {
-        address: arr[i],
-        cluster: null,
-      };
+    const result: any = [];
 
-      try {
-        const data = await fetAccount(params);
-        if (data.succcess) {
-          result.push({ ...data.data, key: i });
-        } else {
-          result.push({ account: arr[i], isErr: true, key: i });
+    for (let i = 0; i < arr.length; i += 5) {
+      const chunk = arr.slice(i, i + 5);
+      const promises = chunk.map(async (address: string, index: number) => {
+        const params = {
+          address,
+          cluster: null,
+        };
+        try {
+          const data = await fetAccount(params);
+          if (data.succcess) {
+            return { ...data?.data, key: i + index };
+          } else {
+            return {
+              account: address,
+              isErr: true,
+              key: i + index,
+            };
+          }
+        } catch (error) {
+          console.log(error);
+          return {
+            account: address,
+            isErr: true,
+            key: i + index,
+          };
         }
-      } catch (error) {
-        console.log(error);
-        result.push({ account: arr[i], isErr: true, key: i });
+      });
+      const chunkResult = await Promise.all(promises);
+      result.push(...chunkResult);
+
+      if ((i + 5) % 5 === 0 || i + 5 >= arr.length) {
+        setAccount((prevResult: any) => [...prevResult, ...result]);
+        result.length = 0;
       }
 
-      // Nếu đã gọi API thứ 5 hoặc đã gọi hết API mà còn dư result
-      if (i === arr.length - 1 || (i + 1) % 5 === 0) {
-        setAccount((prevState: any) => [...prevState, ...result]);
-        result = [];
-      }
-
-      // Nếu chưa gọi hết API mà đã có kết quả trả về, tạm dừng 0.5s trước khi gọi tiếp
-      if (i < arr.length - 1 && (i + 1) % 5 !== 0) {
-        await new Promise((resolve) => setTimeout(resolve, 50));
+      if (i + 5 < arr.length) {
+        await delay(500);
       }
     }
 
     setLoading(false);
   };
+
+  const delay = (ms: number) => new Promise((res) => setTimeout(res, ms));
 
   const columns = [
     {
@@ -172,13 +187,16 @@ function App() {
 
   useEffect(() => {
     fetPriceDetail();
+    if (solList.length) {
+      getAccount(solList[0]?.item);
+    }
   }, []);
 
   return (
     <div className="container">
       <h1>Scan SOL wallets</h1>
       <Row>
-        <Col style={{ margin: "auto", width: "200px" }}>
+        <Col style={{ margin: "auto" }}>
           <Space>
             <img
               src="https://solscan.io/static/media/solana-sol-logo.b612f1402147c92338bed5af1879b175.svg"
