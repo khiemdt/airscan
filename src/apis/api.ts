@@ -11,9 +11,9 @@ export const search = async (params: any) => {
   }
 };
 
-export const fetAccount = async (params: any) => {
+export const fetAccount = async (params: any, add: string) => {
   try {
-    const res = await httpRequest.get("account", {
+    const res = await httpRequest.get(`address/${add}/balances/fungibles`, {
       params: params,
     });
     return res;
@@ -23,12 +23,12 @@ export const fetAccount = async (params: any) => {
 };
 
 export const tokenPriceDetail = async (params: any) => {
-    try {
-      const res = await httpRequest.get("account/v2/tokenaccounts", {
-        params: params,
-      });
-      return res;
-    } catch (error) {
-      console.log(error);
-    }
-  };
+  try {
+    const res = await httpRequest.get("account/v2/tokenaccounts", {
+      params: params,
+    });
+    return res;
+  } catch (error) {
+    console.log(error);
+  }
+};

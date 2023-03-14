@@ -1,7 +1,8 @@
 import axios from "axios";
 
 const httpRequest = axios.create({
-  baseURL: "https://api.solscan.io/",
+  baseURL: "https://api.n.xyz/api/v1/",
+  headers: { accept: "application/json" },
 });
 
 export const get = async (path: any, options = {}) => {

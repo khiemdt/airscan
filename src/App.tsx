@@ -13,6 +13,7 @@ import Table from "antd/es/table";
 import { useEffect, useState } from "react";
 import { fetAccount, search } from "./apis/api";
 import "./App.css";
+import { API_KEY, CHAIN_SP } from "./constants/constant";
 import DetailTabs from "./detail/DetailTabs";
 import SolListForm from "./SolListForm";
 let solListLocal: any = undefined;
@@ -37,13 +38,6 @@ function App() {
   const onSearch = (value: string) => {
     getAccount([value]);
   };
-  const dataSource = [...Array(100)].map((el: any, index: number) => ({
-    key: index,
-    name: "Mike",
-    age: 32 + index,
-    address: "10 Downing Street",
-  }));
-
   const handleSolList = (value: any) => {
     if (value.index != undefined) {
       setSolList(solList.splice(value.index, 1, value));
@@ -56,93 +50,67 @@ function App() {
   };
 
   const getAccount = async (arr: string[]) => {
-    console.log(arr);
-
-    setAccount([]);
     setLoading(true);
-
-    const result: any = [];
-
-    for (let i = 0; i < arr.length; i += 5) {
-      const chunk = arr.slice(i, i + 5);
-      const promises = chunk.map(async (address: string, index: number) => {
-        const params = {
-          address,
-          cluster: null,
-        };
-        try {
-          const data = await fetAccount(params);
-          if (data.succcess) {
-            return { ...data?.data, key: i + index };
-          } else {
-            return {
-              account: address,
-              isErr: true,
-              key: i + index,
-            };
+    const result: any[] = [];
+    for (let index = 0; index < CHAIN_SP.length; index++) {
+      const params = {
+        chainID: CHAIN_SP[index],
+        filterDust: true,
+        filterSpam: true,
+        apikey: API_KEY,
+      };
+      try {
+        const data = await fetAccount(params, arr[0]);
+        if (data) {
+          if (data.length) {
+            result.push({
+              chain: CHAIN_SP[index],
+              data: data,
+            });
           }
-        } catch (error) {
-          console.log(error);
-          return {
-            account: address,
-            isErr: true,
-            key: i + index,
-          };
+        } else {
+          console.log(data.message);
         }
-      });
-      const chunkResult = await Promise.all(promises);
-      result.push(...chunkResult);
-
-      if ((i + 5) % 5 === 0 || i + 5 >= arr.length) {
-        setAccount((prevResult: any) => [...prevResult, ...result]);
-        result.length = 0;
-      }
-
-      if (i + 5 < arr.length) {
-        await delay(500);
+      } catch (error) {
+        console.log(error);
       }
     }
-
     setLoading(false);
+    setAccount(result);
   };
 
-  const delay = (ms: number) => new Promise((res) => setTimeout(res, ms));
+  const getValueOnchain = (data: any[]) => {
+    if (!data || !data.length) {
+      return 0;
+    }
+
+    const result = data.reduce((accumulator: number, currentElement: any) => {
+      console.log(currentElement?.fiat?.[0].value);
+
+      const sum = currentElement
+        ? (
+            Number(currentElement?.fiat?.[0].value || 0) /
+            Math.pow(10, currentElement?.fiat?.[0]?.decimals || 1)
+          ).toFixed(2)
+        : 0;
+      return accumulator + Number(sum);
+    }, 0);
+
+    return result;
+  };
 
   const columns = [
     {
       title: "ID",
-      dataIndex: "key",
-      render: (text: string, record: any, index: number) => {
-        return <div>{index + 1} </div>;
-      },
+      dataIndex: "chain",
       with: 100,
     },
     {
-      title: "Account",
-      dataIndex: "account",
-      key: "account",
-      render: (text: string) => {
-        return <div className="text-clip">{text} </div>;
-      },
-    },
-    {
-      title: "Balance",
-      dataIndex: "lamports",
-      key: "lamports",
-      render: (text: string) => {
-        return <span>{(Number(text) / Math.pow(10, 8)).toFixed(4)} </span>;
-      },
-    },
-    {
-      title: "Value",
-      dataIndex: "lamports",
-      key: "lamports",
-      render: (text: string) => {
-        return (
-          <span>
-            {((Number(text) / Math.pow(10, 8)) * solPrice.priceUsdt).toFixed(2)}
-          </span>
-        );
+      title: "$",
+      dataIndex: "data",
+      key: "data",
+      render: (text: any) => {
+        return <span>{getValueOnchain(text)}</span>;
       },
     },
     {
@@ -194,23 +162,7 @@ function App() {
 
   return (
     <div className="container">
-      <h1>Scan SOL wallets</h1>
-      <Row>
-        <Col style={{ margin: "auto" }}>
-          <Space>
-            <img
-              src="https://solscan.io/static/media/solana-sol-logo.b612f1402147c92338bed5af1879b175.svg"
-              alt=""
-              height={10}
-            />
-            <b>${solPrice?.priceUsdt}</b>
-            <Tag color={solPrice?.priceChange24h > 0 ? "success" : "error"}>
-              {solPrice?.priceChange24h?.toFixed(2)}%{" "}
-            </Tag>
-            <span>Rank: #{solPrice.marketCapRank}</span>
-          </Space>
-        </Col>
-      </Row>
+      <h1>Scan EVM wallets</h1>
       <Row style={{ marginTop: "10px" }}>
         <Col span={24}>
           <Search
@@ -218,67 +170,9 @@ function App() {
             enterButton="Search"
             size="large"
             onSearch={onSearch}
+            loading={loading}
           />
         </Col>
-      </Row>
-      <Row gutter={10} style={{ marginTop: "24px" }}>
-        {solList?.map((el: any, index) => (
-          <Col span={6} key={index}>
-            <Card
-              loading={loading}
-              hoverable
-              actions={[
-                <FileSearchOutlined
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    getAccount(el?.item);
-                  }}
-                  key="search"
-                />,
-                <EditOutlined
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setModal({ ...el, open: true, index: index });
-                  }}
-                  key="edit"
-                />,
-                <DeleteOutlined
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    let arr = [...solList];
-                    arr.splice(index, 1);
-                    setSolList(arr);
-                    localStorage.setItem("solListLocal", JSON.stringify(arr));
-                  }}
-                  key="delete"
-                />,
-              ]}
-            >
-              <Skeleton loading={false} avatar active>
-                <Meta title={el.title} description={el.des} />
-              </Skeleton>
-            </Card>
-          </Col>
-        ))}
-        {(!solList?.length || solList?.length < 4) && (
-          <Col span={6}>
-            <Button
-              onClick={(e) => {
-                e.stopPropagation();
-                setModal({
-                  item: [],
-                  open: true,
-                  title: null,
-                  des: null,
-                });
-              }}
-              className="btn-main"
-              type="primary"
-            >
-              Add SOL list
-            </Button>
-          </Col>
-        )}
       </Row>
       <Row style={{ marginTop: "24px" }}>
         <Table
@@ -289,7 +183,9 @@ function App() {
           columns={columns}
           scroll={{ y: 500 }}
           expandable={{
-            expandedRowRender: (record: any) => <DetailTabs record={record} />,
+            expandedRowRender: (record: any) => (
+              <DetailTabs record={record?.data} />
+            ),
           }}
         />
       </Row>

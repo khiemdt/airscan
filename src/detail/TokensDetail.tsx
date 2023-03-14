@@ -1,4 +1,4 @@
-import { message, Row, Space, Table } from "antd";
+import { Badge, message, Row, Space, Table, Tag } from "antd";
 import { FC, useEffect, useState } from "react";
 import { tokenPriceDetail } from "../apis/api";
 
@@ -6,80 +6,93 @@ interface interfacePros {
   record?: any;
 }
 
-const columns = [
+const columns: any = [
   {
-    title: "Account",
-    dataIndex: "address",
-    key: "address",
-    render: (text: string, record: any) => {
-      return (
-        <a href={`https://solscan.io/token/${text}`} target="_blank">
-          {text}{" "}
-        </a>
-      );
+    title: "#",
+    dataIndex: "",
+    render: (text: string, record: any, index: number) => {
+      return <span>{index + 1}</span>;
     },
   },
   {
     title: "Token",
-    dataIndex: "tokenName",
-    key: "tokenName",
-    render: (text: string, record: any) => {
+    dataIndex: "symbol",
+    key: "symbol",
+  },
+  {
+    title: "Name",
+    dataIndex: "name",
+    key: "name",
+  },
+  {
+    title: "Logo",
+    dataIndex: "symbolLogos",
+    key: "symbolLogos",
+    render: (text: any, record: any) => {
       return (
         <Space>
-          <img style={{ width: 20 }} src={record.tokenIcon} alt="" />
-          <span>{text} </span>
+          <img style={{ width: 20 }} src={text?.[0]?.URI} alt="" />
         </Space>
       );
     },
   },
   {
+    title: "Change 24h",
+    dataIndex: "fiat",
+    key: "fiat",
+    render: (text: any, record: any) => {
+      return (
+        <Badge
+          status={text?.[0]?.percentChange24Hour > 0 ? "success" : "error"}
+          text={
+            text ? `${Number(text?.[0].percentChange24Hour).toFixed(2)}%` : "0%"
+          }
+        />
+      );
+    },
+  },
+  {
     title: "Balance",
-    dataIndex: "amount",
-    key: "amount",
+    dataIndex: "value",
+    key: "value",
     render: (text: string, record: any) => {
       return (
         <span>
-          {(Number(text) / Math.pow(10, record?.decimals)).toFixed(4)}{" "}
+          {(Number(text) / Math.pow(10, record?.decimals)).toFixed(4)}
         </span>
       );
     },
+  },
+  {
+    title: "$",
+    dataIndex: "fiat",
+    key: "fiat",
+    render: (text: any, record: any) => {
+      return (
+        <span>
+          {text
+            ? (
+                Number(text?.[0].value) / Math.pow(10, text?.[0]?.decimals)
+              ).toFixed(2)
+            : 0}
+        </span>
+      );
+    },
+    align: "right",
   },
 ];
 
 const TokensDetail: FC<interfacePros> = (props: any) => {
   const [loading, setLoading] = useState(false);
-
-  const [dataSource, setDataSource] = useState([]);
   const { record } = props;
-  const fetTokenPriceDetail = async () => {
-    setLoading(true);
-    const params = {
-      address: record.account,
-      cluster: null,
-    };
-    try {
-      const data = await tokenPriceDetail(params);
-      if (data.success) {
-        setDataSource(data?.data);
-      } else {
-        message.error(data?.message);
-      }
-      setLoading(false);
-    } catch (error) {
-      console.log(error);
-    }
-  };
-
-  useEffect(() => {
-    fetTokenPriceDetail();
-  }, [record]);
+  useEffect(() => {}, [record]);
   return (
     <Row>
       <Table
         size="small"
         style={{ width: "100%" }}
         pagination={false}
-        dataSource={dataSource || []}
+        dataSource={record || []}
         columns={columns}
         loading={loading}
       />

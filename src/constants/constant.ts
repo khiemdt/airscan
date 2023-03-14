@@ -109,3 +109,16 @@ export const MAIN_MODULE = [
     name: "Vé máy bay",
   },
 ];
+
+export const CHAIN_SP = [
+  "ethereum",
+  "polygon",
+  "bnb",
+  "arbitrumone",
+  "optimism",
+  "avalanche",
+  "gor",
+  "mumbai",
+];
+
+export const API_KEY = "77725a21-34e0-413e-b66f-dc344b7a9f38";
