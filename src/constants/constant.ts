@@ -122,3 +122,8 @@ export const CHAIN_SP = [
 ];
 
 export const API_KEY = "77725a21-34e0-413e-b66f-dc344b7a9f38";
+
+export const formatHexString = (hexString: string): string => {
+  const shortenedHex = `${hexString.slice(0, 3)}...${hexString.slice(-3)}`;
+  return shortenedHex;
+};

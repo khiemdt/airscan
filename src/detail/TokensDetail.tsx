@@ -18,11 +18,13 @@ const columns: any = [
     title: "Token",
     dataIndex: "symbol",
     key: "symbol",
+    width: 100,
   },
   {
     title: "Name",
     dataIndex: "name",
     key: "name",
+    width: 200,
   },
   {
     title: "Logo",
@@ -95,6 +97,7 @@ const TokensDetail: FC<interfacePros> = (props: any) => {
         dataSource={record || []}
         columns={columns}
         loading={loading}
+        scroll={{ y: 400 }}
       />
     </Row>
   );
