@@ -3,6 +3,12 @@
   margin: 0 auto;
   text-align: center;
 }
+html {
+    background: #e5e5e5
+    url(https://st.prntscr.com/2023/03/26/2041/img/page-bg.png) repeat;
+    position: relative;
+    min-height: 100%;
+}
 
 .logo {
   height: 6em;

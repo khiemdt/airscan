@@ -121,7 +121,11 @@ export const CHAIN_SP = [
   "mumbai",
 ];
 
-export const API_KEY = "77725a21-34e0-413e-b66f-dc344b7a9f38";
+export const API_KEY = [
+  '77725a21-34e0-413e-b66f-dc344b7a9f38',
+  '4e77ee12-547d-4374-b27d-814895b6e806',
+  '4f44f281-1150-4557-b80d-7229455b6f45',
+];
 
 export const formatHexString = (hexString: string): string => {
   const shortenedHex = `${hexString.slice(0, 3)}...${hexString.slice(-3)}`;
